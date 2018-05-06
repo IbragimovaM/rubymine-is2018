@@ -3,6 +3,7 @@ package com.jetbrains.python.inspection;
 import com.intellij.codeInspection.LocalInspectionToolSession;
 import com.intellij.codeInspection.ProblemsHolder;
 import com.intellij.psi.PsiElementVisitor;
+import com.jetbrains.python.PyTokenTypes;
 import com.jetbrains.python.inspections.PyInspection;
 import com.jetbrains.python.inspections.PyInspectionVisitor;
 import com.jetbrains.python.psi.*;
@@ -37,6 +38,40 @@ public class PyConstantExpression extends PyInspection {
             final PyExpression condition = pyIfPart.getCondition();
             if (condition instanceof PyBoolLiteralExpression) {
                 registerProblem(condition, "The condition is always " + ((PyBoolLiteralExpression) condition).getValue());
+            }
+
+            if (condition instanceof PyBinaryExpression) {
+                PyBinaryExpression binaryExpression = (PyBinaryExpression) condition;
+                PyExpression leftOperand = binaryExpression.getLeftExpression();
+                PyExpression rightOperand = binaryExpression.getRightExpression();
+                PyElementType operator = binaryExpression.getOperator();
+
+                if ((operator == PyTokenTypes.LT || operator == PyTokenTypes.GT
+                        || operator == PyTokenTypes.EQEQ || operator == PyTokenTypes.NE)
+                        && leftOperand instanceof PyNumericLiteralExpression
+                        && rightOperand instanceof PyNumericLiteralExpression) {
+
+                    Long leftOperandValue = ((PyNumericLiteralExpression) leftOperand).getLongValue();
+                    Long rightOperandValue = ((PyNumericLiteralExpression) rightOperand).getLongValue();
+
+                    if (leftOperandValue != null && rightOperandValue != null) {
+                        boolean comparisonResult = false;
+
+                        if (operator == PyTokenTypes.LT)
+                            comparisonResult = leftOperandValue < rightOperandValue;
+
+                        if (operator == PyTokenTypes.GT)
+                            comparisonResult = leftOperandValue > rightOperandValue;
+
+                        if (operator == PyTokenTypes.EQEQ)
+                            comparisonResult = leftOperandValue.equals(rightOperandValue);
+
+                        if (operator == PyTokenTypes.NE)
+                            comparisonResult = !leftOperandValue.equals(rightOperandValue);
+
+                        registerProblem(condition, "The condition is always " + comparisonResult);
+                    }
+                }
             }
         }
     }
