@@ -47,7 +47,8 @@ public class PyConstantExpression extends PyInspection {
                 PyElementType operator = binaryExpression.getOperator();
 
                 if ((operator == PyTokenTypes.LT || operator == PyTokenTypes.GT
-                        || operator == PyTokenTypes.EQEQ || operator == PyTokenTypes.NE)
+                        || operator == PyTokenTypes.EQEQ || operator == PyTokenTypes.NE
+                        || operator == PyTokenTypes.LE || operator == PyTokenTypes.GE)
                         && leftOperand instanceof PyNumericLiteralExpression
                         && rightOperand instanceof PyNumericLiteralExpression) {
 
@@ -68,6 +69,12 @@ public class PyConstantExpression extends PyInspection {
 
                         if (operator == PyTokenTypes.NE)
                             comparisonResult = !leftOperandValue.equals(rightOperandValue);
+
+                        if (operator == PyTokenTypes.LE)
+                            comparisonResult = leftOperandValue <= rightOperandValue;
+
+                        if (operator == PyTokenTypes.GE)
+                            comparisonResult = leftOperandValue >= rightOperandValue;
 
                         registerProblem(condition, "The condition is always " + comparisonResult);
                     }
